@@ -1,13 +1,64 @@
 ---
-- name: My First Playbook
-  hosts: servers
+- name: Deploy Spring Boot App with MySQL
+  hosts: java_servers
+  become: yes
+
+  vars:
+    app_name: "my-spring-boot-app"
+    app_port: 8080
+    db_name: "mydatabase"
+    db_user: "dbuser"
+    db_password: "dbpassword"
+
   tasks:
-    - name: Ensure Nginx is installed
+    - name: Create a system user for the Spring Boot application
+      user:
+        name: "{{ app_name }}"
+        system: yes
+        shell: /bin/false
+
+    - name: Create a directory for the application
+      file:
+        path: "/opt/{{ app_name }}"
+        state: directory
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: Copy the Spring Boot JAR file
+      copy:
+        src: "{{ playbook_dir }}/files/my-spring-boot-app.jar"
+        dest: "/opt/{{ app_name }}/{{ app_name }}.jar"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: Install MySQL client
       apt:
-        name: nginx
+        name: mysql-client
         state: present
 
-    - name: Ensure Nginx is running
-      service:
-        name: nginx
+    - name: Configure MySQL database
+      mysql_db:
+        name: "{{ db_name }}"
+        state: present
+      become_user: root
+
+    - name: Create MySQL user and grant privileges
+      mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        priv: "{{ db_name }}.*:ALL"
+        state: present
+      become_user: root
+
+    - name: Configure application properties
+      template:
+        src: application.properties.j2
+        dest: "/opt/{{ app_name }}/application.properties"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: Start the Spring Boot app as a systemd service
+      systemd:
+        name: "{{ app_name }}"
+        enabled: yes
         state: started
