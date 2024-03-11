@@ -9,6 +9,8 @@
     db_name: "mydatabase"
     db_user: "dbuser"
     db_password: "dbpassword"
+    mysql_root_user: "root"
+    mysql_root_password: "my_mysql_root_password"
 
   tasks:
     - name: Create a system user for the Spring Boot application
@@ -31,7 +33,7 @@
         owner: "{{ app_name }}"
         group: "{{ app_name }}"
 
-    - name: Install MySQL client
+    - name: Install MySQL client (for Debian-based systems)
       apt:
         name: mysql-client
         state: present
@@ -40,7 +42,8 @@
       mysql_db:
         name: "{{ db_name }}"
         state: present
-      become_user: root
+      login_user: "{{ mysql_root_user }}"
+      login_password: "{{ mysql_root_password }}"
 
     - name: Create MySQL user and grant privileges
       mysql_user:
@@ -48,7 +51,8 @@
         password: "{{ db_password }}"
         priv: "{{ db_name }}.*:ALL"
         state: present
-      become_user: root
+      login_user: "{{ mysql_root_user }}"
+      login_password: "{{ mysql_root_password }}"
 
     - name: Configure application properties
       template:
