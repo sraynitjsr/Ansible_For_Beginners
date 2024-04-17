@@ -1,0 +1,2 @@
+[variables]
+my_variable=20
