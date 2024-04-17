@@ -1,0 +1,12 @@
+- name: Read variable from file
+  hosts: localhost
+  tasks:
+    - name: Read variable from file
+      ini_file:
+        path: ../variables.txt
+        section: variables
+      register: my_variables
+
+    - name: Print variable
+      debug:
+        msg: "The value of my_variable is {{ my_variables.variables.my_variable }}"
